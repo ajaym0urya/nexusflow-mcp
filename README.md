@@ -17,23 +17,32 @@ When temperature-sensitive global assets (such as life-saving biologics, vaccine
 NexusFlow leverages a hybrid, decoupled architecture that pairs a high-performance custom transport layer with advanced generative reasoning models.
 
 
+```text
 [ IoT Sensor Stream ] (e.g., Temperature Breach Alert)
-             │
-             ▼
-  [ Google Gen AI Engine ] (Gemini 2.5 Pro via Official SDK)
-             │
+                     │
+                     ▼
+[ Google Gen AI Engine ] (Gemini 2.5 Pro via Official SDK)
+                     │
+                     ▼
 Reads System Instructions & Target Schema
-              │
-              ▼
+                     │
+                     ▼
 [ Custom MCP Bridge Server ] (Hosted on Google Cloud Run)
-│  ↳ Communicates over Streamable HTTP (JSON-RPC)
-│
-┌───────┴───────┐
-▼               ▼
-[ Geolocation Query ] [ Atomic State Mutation ]
-└───────┬───────┘
-▼
-[ MongoDB Atlas Cluster ] (Collections: shipments, hubs, incidents)
+                     │
+                     └─ Communicates over Streamable HTTP (JSON-RPC)
+                     │
+                     ▼
+        ┌───────────────────────────────┐
+        │                               │
+        ▼                               ▼
+[ Geolocation Query ]      [ Atomic State Mutation ]
+        │                               │
+        └───────────────┬───────────────┘
+                        │
+                        ▼
+[ MongoDB Atlas Cluster ]
+(Collections: shipments, hubs, incidents)
+```
 
 ### Key Components:
 * **The Orchestration Brain:** Powered by the production-grade **Google Gen AI SDK**, executing low-latency system operational blueprints.
