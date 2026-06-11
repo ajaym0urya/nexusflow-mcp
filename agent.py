@@ -8,7 +8,7 @@ from pymongo import MongoClient
 client = genai.Client(vertexai=True, project="nexus-flow-1", location="us-central1")
 
 # Direct, verified connection string to your MongoDB Atlas Cluster
-MONGO_URI = "mongodb+srv://ajaxuser:9JuTJyav69d0okOC@cluster0.rkqjig4.mongodb.net/?appName=Cluster0"
+MONGO_URI = "mongodb+srv://<username>:<password>@cluster0.rkqjig4.mongodb.net/?appName=Cluster0"
 
 def execute_direct_db_mutations(scenario_name):
     try:
