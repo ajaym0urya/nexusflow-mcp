@@ -1,62 +1,128 @@
 # 🌌 NexusFlow: Autonomous Cold-Chain Asset Preservation Engine
 
-An autonomous, event-driven logtech mitigation engine powered by **Google Cloud Platform (GCP)** and **MongoDB Atlas** using the **Model Context Protocol (MCP)**. 
+> An autonomous, event-driven logistics mitigation engine powered by Google Cloud Platform (GCP), Gemini, and MongoDB Atlas using the Model Context Protocol (MCP).
 
 ---
 
-## 📌 Project Overview & Hackathon Focus
+## 📌 Project Overview
 
-Most generative AI hackathon submissions build simple text wrappers—customer support chatbots, document readers, or retail search tools. **NexusFlow moves beyond chat.** It is a self-governing backend infrastructure safeguard engineered to solve a multi-billion dollar real-world problem: **cold-chain logistics failures**.
+Most AI hackathon projects stop at chat interfaces—customer support bots, document assistants, or search applications.
 
-When temperature-sensitive global assets (such as life-saving biologics, vaccines, or perishable pharmaceuticals) experience an onboarding climate failure, every second matters. NexusFlow intercepts live IoT sensor anomaly streams, reasons through target compliance safety rules, discovers nearby certified alternative facilities using geospatial indexing, and executes atomic state overrides directly to the data tier to reroute assets automatically—all before a human coordinator can even open a dashboard.
+**NexusFlow moves beyond chat.**
+
+NexusFlow is a self-governing backend infrastructure system designed to solve one of the most expensive problems in global supply chains: **cold-chain logistics failures**.
+
+When temperature-sensitive assets such as vaccines, biologics, or pharmaceutical shipments experience environmental anomalies, every minute increases the risk of spoilage and financial loss.
+
+NexusFlow autonomously:
+
+* Detects live temperature breaches from IoT telemetry
+* Evaluates compliance and handling requirements
+* Identifies nearby certified backup facilities
+* Performs geospatial warehouse discovery
+* Executes atomic rerouting actions
+* Creates immutable audit records
+
+All before a human operator needs to intervene.
 
 ---
 
-## 🛠️ System Architecture
+## 🎯 Problem Statement
 
-NexusFlow leverages a hybrid, decoupled architecture that pairs a high-performance custom transport layer with advanced generative reasoning models.
+Global cold-chain failures result in billions of dollars of losses annually due to:
 
+* Vaccine spoilage
+* Pharmaceutical degradation
+* Regulatory violations
+* Manual operational delays
+
+Current monitoring systems alert humans.
+
+**NexusFlow takes action.**
+
+---
+
+## 🏗️ System Architecture
 
 ```text
-[ IoT Sensor Stream ] (e.g., Temperature Breach Alert)
-                     │
-                     ▼
-[ Google Gen AI Engine ] (Gemini 2.5 Pro via Official SDK)
-                     │
-                     ▼
-Reads System Instructions & Target Schema
-                     │
-                     ▼
-[ Custom MCP Bridge Server ] (Hosted on Google Cloud Run)
-                     │
-                     └─ Communicates over Streamable HTTP (JSON-RPC)
-                     │
-                     ▼
-        ┌───────────────────────────────┐
-        │                               │
-        ▼                               ▼
-[ Geolocation Query ]      [ Atomic State Mutation ]
-        │                               │
-        └───────────────┬───────────────┘
-                        │
-                        ▼
-[ MongoDB Atlas Cluster ]
-(Collections: shipments, hubs, incidents)
+┌─────────────────────────────┐
+│     IoT Sensor Stream       │
+│ (Temperature Breach Alert)  │
+└─────────────┬───────────────┘
+              │
+              ▼
+┌─────────────────────────────┐
+│ Google Gen AI Engine        │
+│ Gemini 2.5 Pro              │
+└─────────────┬───────────────┘
+              │
+              ▼
+ Reads Operational Instructions
+              │
+              ▼
+┌─────────────────────────────┐
+│ Custom MCP Bridge Server    │
+│ Google Cloud Run            │
+└─────────────┬───────────────┘
+              │
+     Streamable HTTP / JSON-RPC
+              │
+              ▼
+      ┌───────────────┬───────────────┐
+      │               │               │
+      ▼               ▼               ▼
+Geospatial      State Mutation   Audit Logging
+Discovery
+      │               │
+      └───────┬───────┘
+              │
+              ▼
+┌─────────────────────────────┐
+│ MongoDB Atlas Cluster       │
+│ shipments                   │
+│ hubs                        │
+│ incidents                   │
+└─────────────────────────────┘
 ```
 
-### Key Components:
-* **The Orchestration Brain:** Powered by the production-grade **Google Gen AI SDK**, executing low-latency system operational blueprints.
-* **The Network Bridge:** A high-performance **Model Context Protocol (MCP) server** written in Node.js/Express, hosted as a containerized web server on **Google Cloud Run** (`--allow-unauthenticated`).
-* **The Data Engine:** A **MongoDB Atlas** cluster utilizing a polymorphic document model for flexible shipment schemas, alongside a `2dsphere` index to run precise `$near` geospatial warehouse allocation queries.
+---
+
+## ⚙️ Core Components
+
+### 🧠 Orchestration Brain
+
+Powered by the Google Gen AI SDK running Gemini models to execute operational recovery workflows.
+
+### 🌉 MCP Network Bridge
+
+A custom Model Context Protocol (MCP) server built with Node.js and Express, deployed to Google Cloud Run.
+
+Responsibilities:
+
+* Tool execution
+* Database operations
+* Remote procedure orchestration
+* HTTP transport layer
+
+### 🗄️ Data Engine
+
+MongoDB Atlas serves as the operational datastore.
+
+Key capabilities:
+
+* Flexible document schema
+* Geospatial indexing (2dsphere)
+* Atomic document mutations
+* Immutable incident tracking
 
 ---
 
 ## 📊 Database Schema Blueprint
 
-NexusFlow relies on three core operational collections within MongoDB Atlas to track and mitigate global logistics failures:
+### 1️⃣ shipments Collection
 
-### 1. `shipments` Collection
-Stores metadata, temperature parameters, and real-time transit telemetry for current cargo.
+Stores shipment telemetry and operational metadata.
+
 ```json
 {
   "_id": "SHIP-9081",
@@ -71,77 +137,227 @@ Stores metadata, temperature parameters, and real-time transit telemetry for cur
   "status": "IN_TRANSIT",
   "destination": "Boston Distribution Hub"
 }
+```
 
-2. hubs Collection
-Stores locations and capability certifications for backup storage warehouses.
+### 2️⃣ hubs Collection
 
+Stores certified warehouse facilities available for emergency rerouting.
+
+```json
 {
   "_id": "HUB-4402",
   "name": "SafeCold Storage Newark",
-  "certificates": ["Biologics", "DeepFreeze"],
+  "certificates": [
+    "Biologics",
+    "DeepFreeze"
+  ],
   "location": {
     "type": "Point",
     "coordinates": [-74.1724, 40.7357]
   },
   "capacity": "AVAILABLE"
 }
+```
 
+### 3️⃣ incidents Collection
 
-3. incidents Collection
-Acts as an immutable operational ledger logging autonomous intervention actions taken by NexusFlow.
+Maintains an immutable operational audit ledger.
 
-📂 Project Repository Structure
+```json
+{
+  "_id": "INC-1001",
+  "shipment_id": "SHIP-9081",
+  "action": "REROUTED",
+  "reason": "TEMPERATURE_BREACH",
+  "timestamp": "2026-06-12T10:30:00Z"
+}
+```
 
-├── agent.py               # Unified execution entry point utilizing the Google Gen AI SDK
-├── index.js               # Core Node.js source for the custom HTTP-adapted MCP Server
-├── package.json           # Node configuration script and dependencies for Cloud Run
-├── package-lock.json      # Locked application package tree
-└── LICENSE                # Open-source MIT License verification file
+---
 
-🚀 Live Demo & Execution Trace
-When an alert triggers, the engine initiates a multi-step data orchestration trace. Below is the actual runtime trace of the NexusFlow Engine correcting a real-world vaccine payload failure:
+## 📂 Repository Structure
 
+```text
+nexusflow-mcp/
+│
+├── agent.py
+│   └── Gemini orchestration engine
+│
+├── index.js
+│   └── MCP server implementation
+│
+├── package.json
+│   └── Node.js configuration
+│
+├── package-lock.json
+│   └── Dependency lock file
+│
+└── LICENSE
+    └── MIT License
+```
+
+---
+
+## 🚀 Live Execution Trace
+
+```bash
 $ python3 agent.py
-🚀 Connecting to live Cloud Run MCP Bridge...
-🧠 Invoking Gemini Engine via Vertex AI with Real-World Scenario...
 
-🧠 Agent Execution Summary Plan:
-The system has intercepted an emergency temperature spike (-11.2°C) on shipment SHIP-9081. 
-The permitted maximum baseline for Biologics is -15°C. Initiating structural recovery loop.
+🚀 Connecting to Cloud Run MCP Bridge...
 
-💾 Live-triggering MongoDB operations directly via fallback loop...
- -> [MongoDB Call] Fetching validation data from 'shipments'...
- -> [MongoDB Success] 'SHIP-9081' status mutated to REROUTED inside MongoDB Atlas.
- -> [MongoDB Success] Audit summary pushed to 'incidents' collection.
+🧠 Invoking Gemini Recovery Engine...
 
-✅ NexusFlow Emergency Run Complete. Database state safely altered.
+🧠 Incident Detected:
+Shipment SHIP-9081 exceeded safe operating threshold.
 
-Verified Mutations inside MongoDB Atlas:
-shipments Collection: The targeted record id: "SHIP-9081" instantly transitions status to "REROUTED" and updates its destination parameter to the closest certified location matching geospatial metrics.
+Current Temperature:
+-11.2°C
 
-incidents Collection: A secure audit document is inserted automatically to maintain an immutable log of the system's autonomous mitigation handler for logistics stakeholders.
+Maximum Allowed:
+-15°C
 
-💻 Local Quickstart
-Prerequisites
-Python 3.12+
+Initiating recovery workflow...
 
-Node.js v18+
+💾 Executing MongoDB operations...
 
-Google Cloud CLI (gcloud) configured with project permissions.
+→ Fetching shipment metadata
+→ Discovering certified backup hubs
+→ Computing nearest compliant facility
+→ Updating shipment destination
 
-Installation & Setup
-Clone this repository to your local workspace or Google Cloud Shell environment:
+✅ Shipment rerouted successfully
 
-git clone [https://github.com/ajaym0urya/nexusflow-mcp.git](https://github.com/ajaym0urya/nexusflow-mcp.git)
+→ Logging mitigation action
+
+✅ Recovery process completed
+```
+
+---
+
+## 🔄 Database Mutations
+
+### Shipment Collection
+
+Before:
+
+```json
+{
+  "status": "IN_TRANSIT",
+  "destination": "Boston Distribution Hub"
+}
+```
+
+After:
+
+```json
+{
+  "status": "REROUTED",
+  "destination": "SafeCold Storage Newark"
+}
+```
+
+### Incident Collection
+
+```json
+{
+  "shipment_id": "SHIP-9081",
+  "action": "REROUTED",
+  "reason": "TEMPERATURE_BREACH"
+}
+```
+
+---
+
+## 💻 Local Quickstart
+
+### Prerequisites
+
+* Python 3.12+
+* Node.js v18+
+* MongoDB Atlas
+* Google Cloud Project
+* Vertex AI Enabled
+* Google Cloud CLI (`gcloud`)
+
+### Clone Repository
+
+```bash
+git clone https://github.com/ajaym0urya/nexusflow-mcp.git
+
 cd nexusflow-mcp
+```
 
-Install python SDK engine dependencies:
+### Install Python Dependencies
 
+```bash
 pip install google-genai httpx
+```
 
-Initialize your local instance parameters to test the agent workflow natively:
+### Install Node Dependencies
 
+```bash
+npm install
+```
+
+### Configure Google Cloud
+
+```bash
+gcloud auth application-default login
+```
+
+```bash
+gcloud config set project YOUR_PROJECT_ID
+```
+
+### Run NexusFlow
+
+```bash
 python3 agent.py
+```
 
+---
 
-             
+## 🛠️ Technology Stack
+
+| Layer          | Technology          |
+| -------------- | ------------------- |
+| AI Reasoning   | Gemini              |
+| AI Runtime     | Vertex AI           |
+| Protocol Layer | MCP                 |
+| Backend        | Node.js             |
+| Database       | MongoDB Atlas       |
+| Cloud Platform | Google Cloud Run    |
+| Language       | Python & JavaScript |
+
+---
+
+## 🌍 Real-World Applications
+
+* Vaccine distribution
+* Pharmaceutical logistics
+* Biologics transportation
+* Medical cold-chain monitoring
+* High-value perishable supply chains
+
+---
+
+## 🔐 Compliance & Auditability
+
+Every automated intervention is permanently recorded within the `incidents` collection, ensuring:
+
+* Operational transparency
+* Regulatory traceability
+* Compliance reporting
+* Stakeholder accountability
+
+---
+
+## 📜 License
+
+Released under the MIT License.
+
+See the `LICENSE` file for details.
+
+---
+
+### Built for resilient, autonomous supply chains 🌎
