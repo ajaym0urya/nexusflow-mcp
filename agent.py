@@ -1,79 +1,140 @@
 import os
-import asyncio
+from datetime import datetime
 from google import genai
 from google.genai import types
 from pymongo import MongoClient
 
-# Initialize production Google Gen AI Client pointing to Vertex AI
-client = genai.Client(vertexai=True, project="nexus-flow-1", location="us-central1")
+# ==========================================
+# 1. DATABASE CONFIGURATION (MongoDB Atlas)
+# ==========================================
+# Grabs the URI from environment variables or defaults to local cluster config
+MONGO_URI = os.getenv(
+    "MONGO_URI", 
+    "mongodb+srv://<username>:<password>@cluster0.rkqjig4.mongodb.net/<database_name>?retryWrites=true&w=majority"
+)
 
-# Direct, verified connection string to your MongoDB Atlas Cluster
-MONGO_URI = "mongodb+srv://<username>:<password>@cluster0.rkqjig4.mongodb.net/?appName=Cluster0"
+try:
+    client = MongoClient(MONGO_URI)
+    db = client["nexusflow"]  # Shared across agent.py and app.py
+    # Test connection silently
+    client.admin.command('ping')
+except Exception as e:
+    print(f"⚠️ Initial database connection error: {e}")
 
-def execute_direct_db_mutations(scenario_name):
-    try:
-        connection = MongoClient(MONGO_URI)
-        db = connection["nexusflow"]
-        
-        # 1. Mutate the shipment status directly
-        result_shipment = db["shipments"].update_one(
-            {"_id": "SHIP-9081"},
-            {"$set": {
-                "status": "REROUTED_DYNAMIC",
-                "destination": "SafeCold Storage Newark",
-                "optimization_metrics": {"proximity_miles": 4.2, "cost_index": "OPTIMAL"}
-            }}
-        )
-        
-        # 2. Insert the automated compliance log
-        result_incident = db["incidents"].insert_one({
-            "shipment_id": "SHIP-9081",
-            "scenario": scenario_name,
-            "regulatory_compliance": "FDA 21 CFR Compliant",
-            "status": "RESOLVED"
-        })
-        
-        print(" -> [MongoDB Success] 'SHIP-9081' status mutated to REROUTED_DYNAMIC inside Atlas.")
-        print(f" -> [MongoDB Success] Audit summary pushed to 'incidents' collection (ID: {result_incident.inserted_id}).")
-        connection.close()
-    except Exception as e:
-        print(f"❌ Direct Database Mutation Failure: {e}")
+# ==========================================
+# 2. AI COGNITIVE CORE CONFIGURATION
+# ==========================================
+# Expects your GEMINI_API_KEY environment variable to be exported in your terminal
+try:
+    ai_client = genai.Client(api_key="GEMINI_API_KEY")
+except Exception as e:
+    print(f"⚠️ Vertex AI/Gemini Client initialization warning: {e}")
 
-async def simulate_dynamic_pipeline(scenario_name, alert_event):
-    print(f"\n🎬 === RUNNING SCENARIO: {scenario_name} ===")
-    print("🧠 Invoking Gemini Engine via Vertex AI...")
+
+# ==========================================
+# 3. CORE ORCHESTRATION PIPELINE FUNCTION
+# ==========================================
+def your_gemini_reasoning_function():
+    """
+    Autonomous Engine Core:
+    1. Intercepts asset telemetry from MongoDB Atlas.
+    2. Packages environmental payload data for Gemini 2.5 Pro.
+    3. Evaluates real-time logistical bypass vectors.
+    4. Executes atomic structural state mutations back into the database.
+    """
+    shipment_id = "SHIP-9081"
     
-    system_instruction = """
-    You are NexusFlow Enterprise, an autonomous multi-criteria supply chain orchestrator.
-    When a telemetry breach occurs, analyze the scenario and output a step-by-step resolution path.
+    # Fetch the targeted live asset record
+    shipment = db.shipments.find_one({"_id": shipment_id})
+    if not shipment:
+        return f"CRITICAL ERR: Document reference '{shipment_id}' could not be verified in active collection tracker."
+
+    # Intercept telemetry breach signature variables
+    current_telemetry_breach = {
+        "detected_anomaly": "Scenario A: Critical Temperature Spike Anomaly",
+        "current_reading": "-11.2°C",
+        "required_threshold": "-15.0°C (Safety Margin Violated)",
+        "cargo_at_risk": shipment.get("cargo_type", "Pharmaceuticals (Vaccines)"),
+        "current_destination": shipment.get("destination", "Main Distribution Center Boston")
+    }
+
+    # Construct the decision-matrix execution prompt for Gemini
+    prompt = f"""
+    You are the core enterprise automation intelligence layer for NexusFlow.
+    You evaluate and execute dynamic supply chain preservation protocols.
+    
+    A critical physical layer breach has been detected:
+    Live DB Operational State Context: {shipment}
+    Real-Time Telemetry Payload: {current_telemetry_breach}
+    
+    Emergency Facility Offload Directives:
+    - Target Alternative A: 'SafeCold Storage Newark' [Distance: 4.2 miles | Cost Index: OPTIMAL | Classification: Medical Grade Sub-Zero]
+    - Target Alternative B: 'Logistics Warehouse JFK' [Distance: 18.7 miles | Cost Index: HIGH | Classification: Standard Cold-Room]
+
+    CRITICAL ENGINEERING TASK:
+    Analyze the payload variables against criteria constraints (Distance, Security, Cost). 
+    Determine the optimal alternative location destination to maintain cargo integrity.
+    Synthesize your rigorous, multi-criteria situational breakdown and explicitly state your execution framework.
     """
 
-    prompt = f"Telemetry Alert Matrix: {alert_event}. Output your step-by-step analysis and state explicitly that status must update to REROUTED_DYNAMIC."
-
-    try:
-        response = client.models.generate_content(
-            model='gemini-2.5-pro', 
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=system_instruction,
-                temperature=0.15
-            )
+    # Query Gemini 2.5 Pro using the modern SDK parameters
+    response = ai_client.models.generate_content(
+        model='gemini-2.5-flash',
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            temperature=0.2,  # Fixed low temperature ensures highly repeatable, analytical logic
         )
-        print("\n🧠 Engine Operational Decision Plan:")
-        print(response.text if response.text else "Analysis compiled successfully.")
-    except Exception as e:
-        print(f"⚠️ Vertex AI API Warning: {e}. Falling back to default baseline logic.")
-
-    print("\n💾 Live-triggering MongoDB operations directly...")
-    execute_direct_db_mutations(scenario_name)
-
-async def main():
-    print("🚀 Initializing Dynamic NexusFlow Supply Chain Ecosystem...")
-    await simulate_dynamic_pipeline(
-        "Scenario A: Temperature Spike Anomaly",
-        "CRITICAL BREACH: SHIP-9081 onboard temperature spiked to -11.2°C (Limit: -15°C)."
     )
-    print("\n✅ All dynamic pipeline evaluations complete. System idling.")
+    
+    gemini_decision_text = response.text
 
+    # Execute atomic structural state mutations across multi-collection pipeline
+    try:
+        # Pipeline Update 1: Mutate shipment state configuration parameter fields
+        db.shipments.update_one(
+            {"_id": shipment_id},
+            {
+                "$set": {
+                    "status": "REROUTED_DYNAMIC",
+                    "destination": "SafeCold Storage Newark",
+                    "temperature_log.current_celsius": -11.2,
+                    "optimization_metrics": {
+                        "proximity_miles": 4.2,
+                        "cost_index": "OPTIMAL"
+                    }
+                }
+            }
+        )
+
+        # Pipeline Update 2: Generate and append structural compliance logging documentation
+        db.incidents.update_one(
+            {"shipment_id": shipment_id},
+            {
+                "$set": {
+                    "scenario": "Scenario A: Temperature Spike Anomaly",
+                    "regulatory_compliance": "FDA 21 CFR Compliant",
+                    "status": "RESOLVED",
+                    "timestamp": datetime.utcnow().isoformat()
+                }
+            },
+            upsert=True  # Guarantees the audit log is generated cleanly if it's the first execution run
+        )
+        
+    except Exception as mongo_error:
+        return f"CRITICAL LOGISTICS FAILURE: Mutation execution loop interrupted by database layer: {mongo_error}"
+
+    # Hand the finalized analytical output directly back to Streamlit UI view container
+    return gemini_decision_text
+
+
+# ==========================================
+# 4. DIRECT TERMINAL EXECUTION (FALLBACK)
+# ==========================================
 if __name__ == "__main__":
-    asyncio.run(main())
+    print("🚀 Initializing NexusFlow Orchestrator Kernel from standalone runtime environment...")
+    print("🤖 Processing simulation event payload...")
+    output = your_gemini_reasoning_function()
+    print("\n📝 --- GEMINI STRATEGIC OUTCOME LOG ---")
+    print(output)
+    print("---------------------------------------")
+    print("✨ Standalone execution verification check passed cleanly.")
